@@ -8,7 +8,12 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: '*', // Allow all origins for now - you can restrict this later
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control'],
+    credentials: false
+}));
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
@@ -166,7 +171,9 @@ app.get('/events', (req, res) => {
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Cache-Control'
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Cache-Control',
+        'Access-Control-Allow-Credentials': 'false'
     });
 
     // Add client to SSE clients list
@@ -333,6 +340,14 @@ app.get('/health', (req, res) => {
         combinations_count: Object.keys(combinations).length,
         sse_clients: sseClients.length
     });
+});
+
+// Add OPTIONS handler for preflight requests
+app.options('*', (req, res) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cache-Control');
+    res.sendStatus(200);
 });
 
 // Load combinations on startup
