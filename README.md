@@ -1,159 +1,182 @@
 # Infinite Craft SSE Server
 
-This is a Server-Sent Events (SSE) server that manages combination data for Infinite Craft. It provides real-time updates, caching, and AI-powered combination generation.
+A Server-Sent Events (SSE) server for managing Infinite Craft combinations with persistent storage and AI generation.
 
 ## Features
 
-- 📡 **Server-Sent Events (SSE)** for real-time updates
-- 🧠 **AI-powered combination generation** using Hack Club API
-- 💾 **Persistent JSON storage** for combinations
-- 🔍 **Check existing combinations** before generating new ones
-- 📊 **REST API** for managing combinations
-- ⚡ **Real-time broadcasting** of new combinations to all connected clients
+- **Persistent Storage**: All combinations are stored in JSON format
+- **AI Generation**: New combinations are generated using AI when not found in database
+- **First Discovery Tracking**: Tracks when a player discovers an item for the first time
+- **SSE Support**: Real-time communication using Server-Sent Events
+- **REST API**: Full REST API for managing combinations
+- **Discovery Statistics**: Track discovery progress and statistics
 
-## Quick Start
+## Setup
 
-1. Install dependencies:
+### 1. Install Python
+
+**Python 3.8 or higher is required.** Download from [python.org](https://www.python.org/downloads/)
+
+⚠️ **Important**: During installation, make sure to check **"Add Python to PATH"**
+
+### 2. Start the Server
+
+Choose one of these methods:
+
+**Option A: Automatic (Batch file)**
+```batch
+start_server.bat
+```
+
+**Option B: PowerShell Script**
+```powershell
+# You may need to allow script execution first:
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+# Then run:
+.\start_server.ps1
+```
+
+**Option C: Manual**
 ```bash
-npm install
+pip install -r requirements.txt
+python server.py
 ```
 
-2. Start the server:
-```bash
-npm start
-```
+### 3. Update Your Game
 
-Or for development with auto-reload:
-```bash
-npm run dev
-```
+Replace the API interceptor in your Infinite Craft game:
 
-3. The server will run on `http://localhost:3001`
+1. Copy `api-interceptor-sse.js` to your infinite craft folder
+2. In your `index.html`, replace:
+   ```html
+   <script src="./api-interceptor.js"></script>
+   ```
+   with:
+   ```html
+   <script src="./api-interceptor-sse.js"></script>
+   ```
 
-## API Endpoints
+### 4. Test the Server
 
-### SSE Endpoint
-- `GET /events` - Connect to Server-Sent Events stream
+Open `test.html` in your browser to test the server functionality.
 
-### REST API
-- `GET /api/check-combination?first=Fire&second=Water` - Check if combination exists
-- `POST /api/generate-combination` - Generate new combination with AI
-- `GET /api/combinations` - Get all combinations
-- `POST /api/combinations` - Add combination manually
-- `DELETE /api/combinations/:key` - Delete a combination
-- `GET /health` - Health check
+## Server Endpoints
 
-## Usage Examples
+### Health & Status
+- `GET /health` - Server health check and statistics
 
-### Check if combination exists
-```javascript
-const response = await fetch('http://localhost:3001/api/check-combination?first=Fire&second=Water');
-const data = await response.json();
-console.log(data); // { exists: true, combination: { result: "Steam", emoji: "💨", ... } }
-```
+### Crafting
+- `GET /api/infinite-craft/pair?first=Fire&second=Water` - Craft two items
+- `GET /sse/craft?first=Fire&second=Water` - SSE crafting endpoint
 
-### Generate new combination
-```javascript
-const response = await fetch('http://localhost:3001/api/generate-combination', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ first: 'Fire', second: 'Ice' })
-});
-const data = await response.json();
-console.log(data); // { success: true, combination: { result: "Water", emoji: "💧", ... } }
-```
+### Data Management
+- `GET /api/combinations` - List all combinations
+- `GET /api/discoveries` - Get discovery statistics
+- `POST /api/add-combination` - Manually add a combination
+- `POST /api/reset` - Reset database (keeps basic combinations)
 
-### Connect to SSE stream
-```javascript
-const eventSource = new EventSource('http://localhost:3001/events');
+## First Discovery System
 
-eventSource.onmessage = function(event) {
-    const data = JSON.parse(event.data);
-    console.log('SSE Update:', data);
-    
-    switch(data.type) {
-        case 'new_combination':
-            console.log('New combination generated:', data.data);
-            break;
-        case 'combinations_updated':
-            console.log('Combinations file updated');
-            break;
-    }
-};
-```
+The server now properly tracks first discoveries:
 
-## Data Structure
+- **No Random Chance**: Discovery is based on whether the item has been crafted before
+- **Persistent Tracking**: First discoveries are saved and persist across sessions
+- **Real-time Feedback**: `isNew: true` is returned for first discoveries
+- **Statistics**: Track total discoveries and first discovery count
 
-Combinations are stored in JSON format:
+## API Response Format
+
 ```json
 {
-  "Fire+Water": {
-    "result": "Steam",
-    "emoji": "💨",
-    "isNew": false,
-    "timestamp": "2025-01-21T10:30:00.000Z",
-    "generated": true
-  }
+  "result": "Steam",
+  "emoji": "💨",
+  "isNew": false,
+  "created_at": "2025-01-21T12:00:00"
 }
 ```
 
-## Environment Variables
+For first discoveries, `isNew` will be `true`.
 
-- `PORT` - Server port (default: 3001)
+## Data Storage
 
-## Project Structure
+All data is stored in `combinations.json`:
 
-```
-server/
-├── package.json          # Dependencies and scripts
-├── server.js             # Main server file
-├── data/                 # Data directory
-│   └── combinations.json # Combinations storage
-└── README.md            # This file
-```
-
-## SSE Events
-
-The server broadcasts these event types:
-
-- `connected` - Client successfully connected
-- `new_combination` - New combination was generated
-- `combination_added` - Combination was manually added
-- `combination_deleted` - Combination was deleted
-- `combinations_updated` - Combinations file was saved
-
-## Integration with Infinite Craft
-
-To integrate with your existing Infinite Craft setup, modify the `api-interceptor.js` to:
-
-1. First check the SSE server for existing combinations
-2. If not found, generate using the SSE server
-3. Listen to SSE updates for real-time sync
-
-Example integration:
-```javascript
-// Check SSE server first
-async function checkSSECombination(first, second) {
-    try {
-        const response = await fetch(`http://localhost:3001/api/check-combination?first=${first}&second=${second}`);
-        const data = await response.json();
-        
-        if (data.exists) {
-            return data.combination;
-        }
-        
-        // Generate new combination
-        const generateResponse = await fetch('http://localhost:3001/api/generate-combination', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ first, second })
-        });
-        
-        const generateData = await generateResponse.json();
-        return generateData.combination;
-    } catch (error) {
-        console.error('SSE server error:', error);
-        return null; // Fall back to local generation
+```json
+{
+  "combinations": {
+    "Fire+Water": {
+      "result": "Steam",
+      "emoji": "💨",
+      "isNew": false,
+      "created_at": "2025-01-21T12:00:00"
     }
+  },
+  "discovered_items": ["Fire", "Water", "Steam"],
+  "first_discoveries": ["Steam"],
+  "last_updated": "2025-01-21T12:00:00"
 }
 ```
+
+## Client-Side Usage
+
+The SSE interceptor provides these console commands:
+
+```javascript
+// Get server statistics
+window.getServerStats()
+
+// List all combinations
+window.getAllCombinations()
+
+// Show discovery statistics
+window.getDiscoveries()
+
+// Add combination manually
+window.addCombinationToServer("Fire", "Water", "Steam", "💨", false)
+
+// Reset server database
+window.resetServerDatabase()
+
+// Check if last craft was a first discovery
+window.isFirstDiscovery()
+```
+
+## Configuration
+
+Edit the interceptor file to change settings:
+
+```javascript
+const SERVER_URL = 'http://localhost:5000';  // Server URL
+const USE_SSE = true;  // Enable/disable SSE mode
+```
+
+## Troubleshooting
+
+1. **Server won't start**: Check Python installation and dependencies
+2. **Game can't connect**: Ensure server is running on port 5000
+3. **CORS errors**: The server includes CORS headers for local development
+4. **AI generation fails**: Server will fallback to "Nothing" result
+
+## Development
+
+The server is built with Flask and supports:
+- Async AI generation
+- SSE streaming
+- Persistent JSON storage
+- CORS for local development
+- Comprehensive logging
+
+## Basic Combinations Included
+
+The server initializes with basic combinations:
+- Fire + Water = Steam
+- Earth + Fire = Lava  
+- Earth + Water = Plant
+- Fire + Wind = Smoke
+- Water + Wind = Wave
+- Earth + Wind = Dust
+- And more...
+
+## License
+
+This project is for educational and personal use.

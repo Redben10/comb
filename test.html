@@ -3,459 +3,338 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SSE Server Test - Infinite Craft</title>
+    <title>Infinite Craft SSE Server Test</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 20px;
             background: #f5f5f5;
         }
         .container {
             background: white;
-            padding: 20px;
+            padding: 30px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
         }
-        h1 {
-            color: #333;
+        .header {
             text-align: center;
+            margin-bottom: 30px;
         }
-        .status {
+        .craft-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .craft-inputs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        input[type="text"] {
             padding: 10px;
+            border: 2px solid #ddd;
             border-radius: 5px;
-            margin: 10px 0;
-            font-weight: bold;
-        }
-        .status.connected {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .status.disconnected {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        .form-group {
-            margin: 15px 0;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        input, select {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
+            font-size: 16px;
+            flex: 1;
         }
         button {
+            padding: 10px 20px;
             background: #007bff;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
-            margin: 5px;
+            font-size: 16px;
         }
         button:hover {
             background: #0056b3;
         }
-        button.danger {
-            background: #dc3545;
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
-        button.danger:hover {
-            background: #c82333;
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            min-height: 50px;
         }
-        .log {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            padding: 10px;
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .result.loading {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .status-section {
+            margin-top: 30px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .stat-card {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .logs {
+            background: #343a40;
+            color: #fff;
+            padding: 15px;
+            border-radius: 5px;
             height: 200px;
             overflow-y: auto;
             font-family: monospace;
             font-size: 12px;
+            margin-top: 15px;
         }
-        .log-entry {
-            margin: 2px 0;
-            padding: 2px;
-        }
-        .log-entry.info {
-            color: #0056b3;
-        }
-        .log-entry.success {
-            color: #155724;
-        }
-        .log-entry.error {
-            color: #721c24;
-        }
-        .log-entry.warning {
-            color: #856404;
-        }
-        .combinations-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 10px;
-            margin: 10px 0;
-        }
-        .combination-card {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 4px;
-            padding: 10px;
-            font-size: 12px;
-        }
-        .combination-key {
-            font-weight: bold;
-            color: #495057;
-        }
-        .combination-result {
-            font-size: 16px;
-            margin: 5px 0;
-        }
-        .flex {
-            display: flex;
-            gap: 10px;
-            align-items: end;
-        }
-        .flex > * {
-            flex: 1;
+        .emoji {
+            font-size: 24px;
+            margin: 0 10px;
         }
     </style>
 </head>
 <body>
-    <h1>🎮 Infinite Craft SSE Server Test</h1>
-    
     <div class="container">
-        <h2>📡 Server Status</h2>
-        <div id="connectionStatus" class="status disconnected">
-            ❌ Disconnected from SSE Server
+        <div class="header">
+            <h1>🔧 Infinite Craft SSE Server Test</h1>
+            <p>Test the crafting API and Server-Sent Events functionality</p>
         </div>
-        <button onclick="connectSSE()">Connect to SSE</button>
-        <button onclick="disconnectSSE()">Disconnect</button>
-        <button onclick="checkHealth()">Check Server Health</button>
-    </div>
 
-    <div class="container">
-        <h2>🔍 Check Combination</h2>
-        <div class="flex">
-            <div class="form-group">
-                <label for="checkFirst">First Item:</label>
-                <input type="text" id="checkFirst" placeholder="e.g., Fire" value="Fire">
+        <div class="craft-section">
+            <h3>🔄 Craft Items</h3>
+            <div class="craft-inputs">
+                <input type="text" id="first" placeholder="First item (e.g., Fire)" value="Fire">
+                <span class="emoji">+</span>
+                <input type="text" id="second" placeholder="Second item (e.g., Water)" value="Water">
+                <button onclick="craftItems()" id="craftBtn">Craft!</button>
             </div>
-            <div class="form-group">
-                <label for="checkSecond">Second Item:</label>
-                <input type="text" id="checkSecond" placeholder="e.g., Water" value="Water">
-            </div>
-            <div class="form-group">
-                <label>&nbsp;</label>
-                <button onclick="checkCombination()">Check Combination</button>
-            </div>
+            <div id="result" class="result" style="display: none;"></div>
         </div>
-        <div id="checkResult"></div>
-    </div>
 
-    <div class="container">
-        <h2>🎨 Generate Combination</h2>
-        <div class="flex">
-            <div class="form-group">
-                <label for="genFirst">First Item:</label>
-                <input type="text" id="genFirst" placeholder="e.g., Fire" value="Fire">
-            </div>
-            <div class="form-group">
-                <label for="genSecond">Second Item:</label>
-                <input type="text" id="genSecond" placeholder="e.g., Ice" value="Ice">
-            </div>
-            <div class="form-group">
-                <label>&nbsp;</label>
-                <button onclick="generateCombination()">Generate with AI</button>
+        <div class="status-section">
+            <h3>📊 Server Status</h3>
+            <button onclick="checkHealth()">Check Server Health</button>
+            <button onclick="loadStats()">Refresh Statistics</button>
+            <button onclick="clearLogs()">Clear Logs</button>
+            
+            <div class="stats" id="stats">
+                <!-- Stats will be loaded here -->
             </div>
         </div>
-        <div id="generateResult"></div>
-    </div>
 
-    <div class="container">
-        <h2>➕ Add Combination Manually</h2>
-        <div class="flex">
-            <div class="form-group">
-                <label for="addFirst">First Item:</label>
-                <input type="text" id="addFirst" placeholder="e.g., Earth">
-            </div>
-            <div class="form-group">
-                <label for="addSecond">Second Item:</label>
-                <input type="text" id="addSecond" placeholder="e.g., Air">
-            </div>
-            <div class="form-group">
-                <label for="addResult">Result:</label>
-                <input type="text" id="addResult" placeholder="e.g., Dust">
-            </div>
-            <div class="form-group">
-                <label for="addEmoji">Emoji:</label>
-                <input type="text" id="addEmoji" placeholder="e.g., 🌪️" maxlength="2">
-            </div>
-            <div class="form-group">
-                <label>&nbsp;</label>
-                <button onclick="addCombination()">Add Combination</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="container">
-        <h2>📊 All Combinations</h2>
-        <button onclick="loadCombinations()">Refresh Combinations</button>
-        <button onclick="clearLog()">Clear Log</button>
-        <div id="combinationsCount"></div>
-        <div id="combinationsList" class="combinations-grid"></div>
-    </div>
-
-    <div class="container">
-        <h2>📋 Activity Log</h2>
-        <div id="log" class="log">
-            <div class="log-entry info">📡 Ready to connect to SSE server...</div>
+        <div>
+            <h3>📝 Logs</h3>
+            <div id="logs" class="logs"></div>
         </div>
     </div>
 
     <script>
-        const SSE_SERVER_URL = 'http://localhost:3001';
+        const SERVER_URL = 'http://localhost:5000';
         let eventSource = null;
 
         function log(message, type = 'info') {
-            const logDiv = document.getElementById('log');
-            const entry = document.createElement('div');
-            entry.className = `log-entry ${type}`;
-            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logDiv.appendChild(entry);
-            logDiv.scrollTop = logDiv.scrollHeight;
+            const timestamp = new Date().toLocaleTimeString();
+            const logs = document.getElementById('logs');
+            const color = {
+                'info': '#17a2b8',
+                'success': '#28a745',
+                'error': '#dc3545',
+                'warning': '#ffc107'
+            }[type] || '#17a2b8';
+            
+            logs.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logs.scrollTop = logs.scrollHeight;
         }
 
-        function clearLog() {
-            document.getElementById('log').innerHTML = '<div class="log-entry info">📋 Log cleared</div>';
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
         }
 
-        function updateConnectionStatus(connected) {
-            const statusDiv = document.getElementById('connectionStatus');
-            if (connected) {
-                statusDiv.className = 'status connected';
-                statusDiv.textContent = '✅ Connected to SSE Server';
-            } else {
-                statusDiv.className = 'status disconnected';
-                statusDiv.textContent = '❌ Disconnected from SSE Server';
-            }
-        }
-
-        function connectSSE() {
-            if (eventSource) {
-                eventSource.close();
-            }
-
-            log('📡 Connecting to SSE server...', 'info');
-            eventSource = new EventSource(`${SSE_SERVER_URL}/events`);
-
-            eventSource.onopen = function(event) {
-                log('✅ Connected to SSE server', 'success');
-                updateConnectionStatus(true);
-            };
-
-            eventSource.onmessage = function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    log(`📡 SSE: ${data.type} - ${JSON.stringify(data.data)}`, 'info');
-                    
-                    if (data.type === 'new_combination') {
-                        loadCombinations(); // Refresh combinations list
-                    }
-                } catch (error) {
-                    log(`❌ Error parsing SSE data: ${error.message}`, 'error');
-                }
-            };
-
-            eventSource.onerror = function(event) {
-                log('⚠️ SSE connection error', 'warning');
-                updateConnectionStatus(false);
-            };
-        }
-
-        function disconnectSSE() {
-            if (eventSource) {
-                eventSource.close();
-                eventSource = null;
-                log('🔌 Disconnected from SSE server', 'info');
-                updateConnectionStatus(false);
-            }
+        function showResult(message, type) {
+            const result = document.getElementById('result');
+            result.className = `result ${type}`;
+            result.innerHTML = message;
+            result.style.display = 'block';
         }
 
         async function checkHealth() {
             try {
-                log('🔍 Checking server health...', 'info');
-                const response = await fetch(`${SSE_SERVER_URL}/health`);
+                log('Checking server health...', 'info');
+                const response = await fetch(`${SERVER_URL}/health`);
                 const data = await response.json();
-                log(`✅ Server health: ${JSON.stringify(data)}`, 'success');
+                
+                if (response.ok) {
+                    log('✅ Server is healthy', 'success');
+                    updateStats(data);
+                } else {
+                    log('❌ Server health check failed', 'error');
+                }
             } catch (error) {
-                log(`❌ Health check failed: ${error.message}`, 'error');
+                log(`❌ Failed to connect to server: ${error.message}`, 'error');
+                showResult('❌ Cannot connect to server. Make sure the server is running on localhost:5000', 'error');
             }
         }
 
-        async function checkCombination() {
-            const first = document.getElementById('checkFirst').value.trim();
-            const second = document.getElementById('checkSecond').value.trim();
+        function updateStats(data) {
+            const stats = document.getElementById('stats');
+            stats.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${data.combinations_count || 0}</div>
+                    <div>Total Combinations</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${data.discovered_items_count || 0}</div>
+                    <div>Discovered Items</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${data.first_discoveries_count || 0}</div>
+                    <div>First Discoveries</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${data.status === 'healthy' ? '✅' : '❌'}</div>
+                    <div>Server Status</div>
+                </div>
+            `;
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${SERVER_URL}/health`);
+                const data = await response.json();
+                updateStats(data);
+                log('📊 Statistics updated', 'success');
+            } catch (error) {
+                log(`❌ Failed to load statistics: ${error.message}`, 'error');
+            }
+        }
+
+        function craftItems() {
+            const first = document.getElementById('first').value.trim();
+            const second = document.getElementById('second').value.trim();
             
             if (!first || !second) {
-                log('❌ Please enter both items', 'error');
+                showResult('❌ Please enter both items', 'error');
                 return;
             }
 
-            try {
-                log(`🔍 Checking combination: ${first} + ${second}`, 'info');
-                const response = await fetch(`${SSE_SERVER_URL}/api/check-combination?first=${encodeURIComponent(first)}&second=${encodeURIComponent(second)}`);
-                const data = await response.json();
-                
-                const resultDiv = document.getElementById('checkResult');
-                if (data.exists) {
-                    resultDiv.innerHTML = `
-                        <div style="background: #d4edda; padding: 10px; border-radius: 4px; margin: 10px 0;">
-                            ✅ <strong>Found:</strong> ${first} + ${second} = ${data.combination.result} ${data.combination.emoji}
-                        </div>
-                    `;
-                    log(`✅ Found: ${data.combination.result} ${data.combination.emoji}`, 'success');
-                } else {
-                    resultDiv.innerHTML = `
-                        <div style="background: #f8d7da; padding: 10px; border-radius: 4px; margin: 10px 0;">
-                            ❌ <strong>Not found:</strong> ${first} + ${second}
-                        </div>
-                    `;
-                    log('❌ Combination not found', 'warning');
-                }
-            } catch (error) {
-                log(`❌ Check failed: ${error.message}`, 'error');
-            }
-        }
-
-        async function generateCombination() {
-            const first = document.getElementById('genFirst').value.trim();
-            const second = document.getElementById('genSecond').value.trim();
+            log(`🔄 Crafting: ${first} + ${second}`, 'info');
+            showResult('🔄 Crafting items...', 'loading');
             
-            if (!first || !second) {
-                log('❌ Please enter both items', 'error');
-                return;
+            const btn = document.getElementById('craftBtn');
+            btn.disabled = true;
+            btn.textContent = 'Crafting...';
+
+            // Use SSE for real-time updates
+            if (eventSource) {
+                eventSource.close();
             }
 
-            try {
-                log(`🎨 Generating combination: ${first} + ${second}`, 'info');
-                const response = await fetch(`${SSE_SERVER_URL}/api/generate-combination`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ first, second })
-                });
-                const data = await response.json();
-                
-                const resultDiv = document.getElementById('generateResult');
-                if (data.success) {
-                    resultDiv.innerHTML = `
-                        <div style="background: #d1ecf1; padding: 10px; border-radius: 4px; margin: 10px 0;">
-                            🎨 <strong>Generated:</strong> ${first} + ${second} = ${data.combination.result} ${data.combination.emoji}
-                            ${data.combination.isNew ? '<span style="color: #0c5460; font-weight: bold;"> (NEW!)</span>' : ''}
-                            ${data.combination.firstDiscovery ? '<span style="color: #d4630c; font-weight: bold;"> 🎉 FIRST DISCOVERY!</span>' : ''}
-                        </div>
-                    `;
-                    log(`🎨 Generated: ${data.combination.result} ${data.combination.emoji}`, 'success');
-                    loadCombinations(); // Refresh combinations list
-                } else {
-                    log('❌ Generation failed', 'error');
+            const url = `${SERVER_URL}/sse/craft?first=${encodeURIComponent(first)}&second=${encodeURIComponent(second)}`;
+            eventSource = new EventSource(url);
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.status === 'processing') {
+                        log(`📡 ${data.message}`, 'info');
+                        showResult(`🔄 ${data.message}`, 'loading');
+                    } else if (data.status === 'generating') {
+                        log(`🤖 ${data.message}`, 'warning');
+                        showResult(`🤖 ${data.message}`, 'loading');
+                    } else if (data.status === 'found') {
+                        const result = data.result;
+                        log(`📖 Found existing: ${result.result} ${result.emoji}`, 'success');
+                        showResult(`📖 ${first} + ${second} = <span class="emoji">${result.emoji}</span> <strong>${result.result}</strong>`, 'success');
+                        finishCrafting();
+                    } else if (data.status === 'complete') {
+                        const result = data.result;
+                        const discoveryText = result.isNew ? ' 🌟 (First Discovery!)' : '';
+                        log(`✅ Generated: ${result.result} ${result.emoji}${discoveryText}`, 'success');
+                        showResult(`✨ ${first} + ${second} = <span class="emoji">${result.emoji}</span> <strong>${result.result}</strong>${discoveryText}`, 'success');
+                        finishCrafting();
+                    } else if (data.error) {
+                        log(`❌ Error: ${data.error}`, 'error');
+                        showResult(`❌ Error: ${data.error}`, 'error');
+                        finishCrafting();
+                    }
+                } catch (error) {
+                    log(`❌ SSE parsing error: ${error.message}`, 'error');
+                    showResult(`❌ Communication error`, 'error');
+                    finishCrafting();
                 }
-            } catch (error) {
-                log(`❌ Generation failed: ${error.message}`, 'error');
-            }
-        }
+            };
 
-        async function addCombination() {
-            const first = document.getElementById('addFirst').value.trim();
-            const second = document.getElementById('addSecond').value.trim();
-            const result = document.getElementById('addResult').value.trim();
-            const emoji = document.getElementById('addEmoji').value.trim();
-            
-            if (!first || !second || !result || !emoji) {
-                log('❌ Please fill all fields', 'error');
-                return;
-            }
+            eventSource.onerror = function(error) {
+                log(`❌ SSE connection failed`, 'error');
+                showResult(`❌ Failed to connect to server for real-time updates`, 'error');
+                finishCrafting();
+            };
 
-            try {
-                log(`➕ Adding combination: ${first} + ${second} = ${result} ${emoji}`, 'info');
-                const response = await fetch(`${SSE_SERVER_URL}/api/combinations`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ first, second, result, emoji, isNew: false })
-                });
-                const data = await response.json();
-                
-                if (data.success) {
-                    log(`✅ Added: ${result} ${emoji}`, 'success');
-                    // Clear form
-                    document.getElementById('addFirst').value = '';
-                    document.getElementById('addSecond').value = '';
-                    document.getElementById('addResult').value = '';
-                    document.getElementById('addEmoji').value = '';
-                    loadCombinations(); // Refresh combinations list
-                } else {
-                    log('❌ Add failed', 'error');
+            function finishCrafting() {
+                btn.disabled = false;
+                btn.textContent = 'Craft!';
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
                 }
-            } catch (error) {
-                log(`❌ Add failed: ${error.message}`, 'error');
+                // Refresh stats after crafting
+                setTimeout(loadStats, 500);
             }
+
+            // Timeout after 30 seconds
+            setTimeout(() => {
+                if (eventSource) {
+                    eventSource.close();
+                    eventSource = null;
+                    log(`⏰ Request timeout`, 'warning');
+                    showResult(`⏰ Request timed out`, 'error');
+                    finishCrafting();
+                }
+            }, 30000);
         }
 
-        async function loadCombinations() {
-            try {
-                log('📊 Loading combinations...', 'info');
-                const response = await fetch(`${SSE_SERVER_URL}/api/combinations`);
-                const data = await response.json();
-                
-                document.getElementById('combinationsCount').textContent = `Total combinations: ${data.count}`;
-                
-                const listDiv = document.getElementById('combinationsList');
-                listDiv.innerHTML = '';
-                
-                Object.entries(data.combinations).forEach(([key, combo]) => {
-                    const card = document.createElement('div');
-                    card.className = 'combination-card';
-                    card.innerHTML = `
-                        <div class="combination-key">${key}</div>
-                        <div class="combination-result">${combo.result} ${combo.emoji}</div>
-                        <div style="font-size: 10px; color: #6c757d;">
-                            ${combo.isNew ? '🆕 New' : ''} 
-                            ${combo.firstDiscovery ? '🎉 First Discovery' : ''}
-                            ${combo.generated ? '🤖 AI' : '📖 Manual'}
-                            ${combo.timestamp ? new Date(combo.timestamp).toLocaleString() : ''}
-                        </div>
-                    `;
-                    listDiv.appendChild(card);
-                });
-                
-                log(`📊 Loaded ${data.count} combinations`, 'success');
-            } catch (error) {
-                log(`❌ Load failed: ${error.message}`, 'error');
-            }
-        }
-
-        // Auto-connect on page load
-        window.addEventListener('load', () => {
-            connectSSE();
-            loadCombinations();
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            log('🚀 Test page loaded', 'info');
+            log('🔗 Attempting to connect to server...', 'info');
+            checkHealth();
         });
 
-        // Clean up on page unload
-        window.addEventListener('beforeunload', () => {
-            disconnectSSE();
+        // Handle page unload
+        window.addEventListener('beforeunload', function() {
+            if (eventSource) {
+                eventSource.close();
+            }
+        });
+
+        // Allow Enter key to craft
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                craftItems();
+            }
         });
     </script>
 </body>
