@@ -8,7 +8,9 @@ This is a Server-Sent Events (SSE) server that manages combinations for Infinite
 - 💾 JSON file storage for combinations
 - 🔍 RESTful API for querying combinations
 - ✨ Automatic logging of new AI-generated combinations
+- 🌟 **First discovery detection** - automatically detects when a result is created for the first time
 - 📊 Server statistics and health monitoring
+- 🎉 Real-time notifications for first discoveries
 
 ## Installation
 
@@ -39,8 +41,12 @@ npm run dev
 
 ### Combinations
 - `GET /api/combination/:first/:second` - Get a specific combination
-- `POST /api/combination` - Add a new combination
+- `POST /api/combination` - Add a new combination (auto-detects first discoveries)
 - `GET /api/combinations` - Get all combinations
+
+### First Discoveries
+- `GET /api/check-first-discovery/:result` - Check if a result would be a first discovery
+- `GET /api/first-discoveries` - Get all combinations marked as first discoveries
 
 ### Monitoring
 - `GET /api/stats` - Get server statistics
@@ -56,10 +62,16 @@ Example requests:
 # Get a combination
 curl http://localhost:3001/api/combination/Fire/Water
 
-# Add a combination
+# Add a combination (server will auto-detect if it's a first discovery)
 curl -X POST http://localhost:3001/api/combination \
   -H "Content-Type: application/json" \
-  -d '{"first":"Fire","second":"Ice","result":"Steam","emoji":"💨","isNew":true}'
+  -d '{"first":"Fire","second":"Ice","result":"Steam","emoji":"💨"}'
+
+# Check if a result would be a first discovery
+curl http://localhost:3001/api/check-first-discovery/Dragon
+
+# Get all first discoveries
+curl http://localhost:3001/api/first-discoveries
 
 # Subscribe to events (in browser or with curl)
 curl http://localhost:3001/events

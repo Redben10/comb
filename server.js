@@ -54,6 +54,17 @@ function getCombinationKey(first, second) {
     return sorted[0] + '+' + sorted[1];
 }
 
+// Check if a result has ever been created before (first discovery check)
+function isFirstDiscovery(result, existingCombinations) {
+    // Check if this result has ever appeared in any combination
+    for (const combination of Object.values(existingCombinations)) {
+        if (combination.result.toLowerCase() === result.toLowerCase()) {
+            return false; // Result already exists
+        }
+    }
+    return true; // This is a first discovery!
+}
+
 // SSE endpoint for real-time updates
 app.get('/events', (req, res) => {
     // Set SSE headers
@@ -122,12 +133,37 @@ app.post('/api/combination', async (req, res) => {
             return res.json(combinations[key]);
         }
         
-        const newCombination = { result, emoji, isNew: isNew || false };
+        // Check if this result is a first discovery
+        const isFirstTime = isFirstDiscovery(result, combinations);
+        
+        const newCombination = { 
+            result, 
+            emoji, 
+            isNew: isFirstTime // Override isNew with actual first discovery status
+        };
         combinations[key] = newCombination;
         
         await saveCombinations(combinations);
         
-        console.log(`✨ New combination added: ${key} = ${result} ${emoji}`);
+        if (isFirstTime) {
+            console.log(`🌟 FIRST DISCOVERY: ${key} = ${result} ${emoji}`);
+            
+            // Send special notification for first discoveries
+            const firstDiscoveryMessage = JSON.stringify({
+                type: 'first_discovery',
+                combination: key,
+                result,
+                emoji,
+                timestamp: new Date().toISOString()
+            });
+            
+            sseClients.forEach(client => {
+                client.write(`data: ${firstDiscoveryMessage}\n\n`);
+            });
+        } else {
+            console.log(`✨ New combination added: ${key} = ${result} ${emoji}`);
+        }
+        
         res.json(newCombination);
         
     } catch (error) {
@@ -143,6 +179,44 @@ app.get('/api/combinations', async (req, res) => {
         res.json(combinations);
     } catch (error) {
         console.error('Error fetching all combinations:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Check if a result would be a first discovery
+app.get('/api/check-first-discovery/:result', async (req, res) => {
+    try {
+        const { result } = req.params;
+        const combinations = await loadCombinations();
+        
+        const isFirst = isFirstDiscovery(result, combinations);
+        
+        res.json({
+            result,
+            isFirstDiscovery: isFirst,
+            message: isFirst ? 'This would be a first discovery!' : 'This result already exists'
+        });
+    } catch (error) {
+        console.error('Error checking first discovery:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get all first discoveries (items marked as isNew: true)
+app.get('/api/first-discoveries', async (req, res) => {
+    try {
+        const combinations = await loadCombinations();
+        const firstDiscoveries = {};
+        
+        for (const [key, combo] of Object.entries(combinations)) {
+            if (combo.isNew === true) {
+                firstDiscoveries[key] = combo;
+            }
+        }
+        
+        res.json(firstDiscoveries);
+    } catch (error) {
+        console.error('Error fetching first discoveries:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
