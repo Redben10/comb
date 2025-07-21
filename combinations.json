@@ -14,5 +14,9 @@
   "Cloud+Water": { "result": "Rain", "emoji": "🌧️", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
   "Cloud+Fire": { "result": "Lightning", "emoji": "⚡", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
   "Cloud+Wind": { "result": "Storm", "emoji": "⛈️", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
-  "Cloud+Earth": { "result": "Fog", "emoji": "🌫️", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" }
+  "Cloud+Earth": { "result": "Fog", "emoji": "🌫️", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Wind+Dust": { "result": "Sandstorm", "emoji": "🌪️", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Earth+Dust": { "result": "Planet", "emoji": "🪐", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Sandstorm+Planet": { "result": "Mars", "emoji": "🪐", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Mars+Earth": { "result": "Life", "emoji": "🌱", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" }
 }
