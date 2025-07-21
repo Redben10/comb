@@ -1,0 +1,18 @@
+{
+  "Fire+Water": { "result": "Steam", "emoji": "💨", "isNew": false },
+  "Earth+Fire": { "result": "Lava", "emoji": "🌋", "isNew": false },
+  "Earth+Water": { "result": "Plant", "emoji": "🌱", "isNew": false },
+  "Plant+Plant": { "result": "Forest", "emoji": "🌳", "isNew": false },
+  "Wind+Fire": { "result": "Smoke", "emoji": "💨", "isNew": false },
+  "Water+Wind": { "result": "Wave", "emoji": "🌊", "isNew": false },
+  "Fire+Wind": { "result": "Smoke", "emoji": "💨", "isNew": false },
+  "Earth+Wind": { "result": "Dust", "emoji": "🌪️", "isNew": false },
+  "Lava+Water": { "result": "Stone", "emoji": "🪨", "isNew": false },
+  "Lava+Wind": { "result": "Volcano", "emoji": "🌋", "isNew": false },
+  "Lava+Earth": { "result": "Mountain", "emoji": "⛰️", "isNew": false },
+  "Lava+Fire": { "result": "Magma", "emoji": "🔥", "isNew": false },
+  "Cloud+Water": { "result": "Rain", "emoji": "🌧️", "isNew": false },
+  "Cloud+Fire": { "result": "Lightning", "emoji": "⚡", "isNew": false },
+  "Cloud+Wind": { "result": "Storm", "emoji": "⛈️", "isNew": false },
+  "Cloud+Earth": { "result": "Fog", "emoji": "🌫️", "isNew": false }
+}
