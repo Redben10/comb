@@ -104,7 +104,12 @@ app.get('/api/combination/:first/:second', async (req, res) => {
         
         if (combinations[key]) {
             console.log(`🔍 Found combination: ${key} = ${combinations[key].result}`);
-            res.json(combinations[key]);
+            // Always return isNew: false for existing combinations
+            res.json({
+                result: combinations[key].result,
+                emoji: combinations[key].emoji,
+                isNew: false // Never show as new when retrieving existing combinations
+            });
         } else {
             console.log(`❓ Combination not found: ${key}`);
             res.status(404).json({ error: 'Combination not found' });
@@ -130,16 +135,23 @@ app.post('/api/combination', async (req, res) => {
         // Don't overwrite existing combinations
         if (combinations[key]) {
             console.log(`⚠️ Combination already exists: ${key}`);
-            return res.json(combinations[key]);
+            // Always return isNew: false for existing combinations
+            return res.json({
+                result: combinations[key].result,
+                emoji: combinations[key].emoji,
+                isNew: false
+            });
         }
         
         // Check if this result is a first discovery
         const isFirstTime = isFirstDiscovery(result, combinations);
         
+        // Save to JSON file with metadata about first discovery
         const newCombination = { 
             result, 
             emoji, 
-            isNew: isFirstTime // Override isNew with actual first discovery status
+            wasFirstDiscovery: isFirstTime, // Track if it was ever a first discovery
+            discoveredAt: new Date().toISOString() // When it was first discovered
         };
         combinations[key] = newCombination;
         
@@ -164,7 +176,12 @@ app.post('/api/combination', async (req, res) => {
             console.log(`✨ New combination added: ${key} = ${result} ${emoji}`);
         }
         
-        res.json(newCombination);
+        // Return the combination with isNew set correctly for THIS request
+        res.json({
+            result,
+            emoji,
+            isNew: isFirstTime // Only true if this is actually a first discovery right now
+        });
         
     } catch (error) {
         console.error('Error adding combination:', error);
@@ -202,15 +219,20 @@ app.get('/api/check-first-discovery/:result', async (req, res) => {
     }
 });
 
-// Get all first discoveries (items marked as isNew: true)
+// Get all first discoveries (items marked as wasFirstDiscovery: true)
 app.get('/api/first-discoveries', async (req, res) => {
     try {
         const combinations = await loadCombinations();
         const firstDiscoveries = {};
         
         for (const [key, combo] of Object.entries(combinations)) {
-            if (combo.isNew === true) {
-                firstDiscoveries[key] = combo;
+            if (combo.wasFirstDiscovery === true) {
+                firstDiscoveries[key] = {
+                    result: combo.result,
+                    emoji: combo.emoji,
+                    discoveredAt: combo.discoveredAt,
+                    wasFirstDiscovery: true
+                };
             }
         }
         
