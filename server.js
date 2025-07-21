@@ -266,6 +266,24 @@ app.get('/health', (req, res) => {
 
 const serverStartTime = Date.now();
 
+// Periodic auto-save every 5 minutes to prevent data loss
+const AUTO_SAVE_INTERVAL = 5 * 60 * 1000; // 5 minutes
+let autoSaveTimer;
+
+async function performAutoSave() {
+    try {
+        console.log('🔄 Performing auto-save...');
+        const combinations = await loadCombinations();
+        await fs.writeFile(COMBINATIONS_FILE, JSON.stringify(combinations, null, 2));
+        console.log('✅ Auto-save completed');
+    } catch (error) {
+        console.error('❌ Auto-save failed:', error);
+    }
+}
+
+// Start auto-save timer
+autoSaveTimer = setInterval(performAutoSave, AUTO_SAVE_INTERVAL);
+
 // Start server
 app.listen(PORT, () => {
     console.log(`🚀 Infinite Craft Combinations Server running on port ${PORT}`);
@@ -274,21 +292,106 @@ app.listen(PORT, () => {
     console.log(`📋 All Combinations: http://localhost:${PORT}/api/combinations`);
     console.log(`📈 Stats: http://localhost:${PORT}/api/stats`);
     console.log(`❤️ Health Check: http://localhost:${PORT}/health`);
+    console.log(`💾 Auto-save enabled: every ${AUTO_SAVE_INTERVAL / 1000 / 60} minutes`);
 });
 
 // Graceful shutdown
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
     console.log('\n🛑 Shutting down server...');
     
+    // Clear auto-save timer
+    if (autoSaveTimer) {
+        clearInterval(autoSaveTimer);
+        console.log('⏹️ Auto-save timer stopped');
+    }
+    
+    try {
+        // Load current combinations and ensure they're saved
+        console.log('💾 Ensuring all data is saved to JSON file...');
+        const combinations = await loadCombinations();
+        await saveCombinations(combinations);
+        console.log('✅ Data successfully saved');
+    } catch (error) {
+        console.error('❌ Error saving data during shutdown:', error);
+    }
+    
     // Close all SSE connections
+    console.log('🔌 Closing SSE connections...');
     sseClients.forEach(client => {
-        client.write(`data: ${JSON.stringify({
-            type: 'server_shutdown',
-            message: 'Server is shutting down',
-            timestamp: new Date().toISOString()
-        })}\n\n`);
-        client.end();
+        try {
+            client.write(`data: ${JSON.stringify({
+                type: 'server_shutdown',
+                message: 'Server is shutting down - all data has been saved',
+                timestamp: new Date().toISOString()
+            })}\n\n`);
+            client.end();
+        } catch (error) {
+            // Ignore errors when closing connections
+        }
     });
     
+    console.log('👋 Server shutdown complete');
     process.exit(0);
+});
+
+// Handle other shutdown signals
+process.on('SIGTERM', async () => {
+    console.log('\n🛑 Received SIGTERM, shutting down gracefully...');
+    
+    // Clear auto-save timer
+    if (autoSaveTimer) {
+        clearInterval(autoSaveTimer);
+    }
+    
+    try {
+        const combinations = await loadCombinations();
+        await saveCombinations(combinations);
+        console.log('✅ Data saved on SIGTERM');
+    } catch (error) {
+        console.error('❌ Error saving data on SIGTERM:', error);
+    }
+    
+    process.exit(0);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', async (error) => {
+    console.error('💥 Uncaught Exception:', error);
+    
+    // Clear auto-save timer
+    if (autoSaveTimer) {
+        clearInterval(autoSaveTimer);
+    }
+    
+    try {
+        console.log('💾 Emergency data save...');
+        const combinations = await loadCombinations();
+        await saveCombinations(combinations);
+        console.log('✅ Emergency save completed');
+    } catch (saveError) {
+        console.error('❌ Emergency save failed:', saveError);
+    }
+    
+    process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', async (reason, promise) => {
+    console.error('🚫 Unhandled Rejection at:', promise, 'reason:', reason);
+    
+    // Clear auto-save timer
+    if (autoSaveTimer) {
+        clearInterval(autoSaveTimer);
+    }
+    
+    try {
+        console.log('💾 Emergency data save...');
+        const combinations = await loadCombinations();
+        await saveCombinations(combinations);
+        console.log('✅ Emergency save completed');
+    } catch (saveError) {
+        console.error('❌ Emergency save failed:', saveError);
+    }
+    
+    process.exit(1);
 });
