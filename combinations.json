@@ -17,5 +17,16 @@
   "Dust+Wind": { "result": "Sandstorm", "emoji": "🌪️", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
   "Dust+Earth": { "result": "Planet", "emoji": "🪐", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
   "Planet+Sandstorm": { "result": "Mars", "emoji": "🪐", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
-  "Earth+Mars": { "result": "Life", "emoji": "🌱", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" }
+  "Earth+Mars": { "result": "Life", "emoji": "🌱", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Earth+Life": { "result": "Human", "emoji": "👤", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Plant+Water": { "result": "Swamp", "emoji": "🌿", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Fire+Swamp": { "result": "Dragon", "emoji": "🐉", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Earth+Stone": { "result": "Rock", "emoji": "🪨", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Human+Rock": { "result": "Tool", "emoji": "🔨", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Fire+Rock": { "result": "Metal", "emoji": "⚙️", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Metal+Tool": { "result": "Machine", "emoji": "🤖", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Human+Machine": { "result": "Factory", "emoji": "🏭", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Factory+Metal": { "result": "Sphere", "emoji": "⚪", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Human+Sphere": { "result": "Ball", "emoji": "⚽", "wasFirstDiscovery": false, "discoveredAt": "2025-01-01T00:00:00.000Z" },
+  "Ball+Dragon": { "result": "Dragon Ball", "emoji": "🐉", "wasFirstDiscovery": true, "discoveredAt": "2025-01-01T00:00:00.000Z" }
 }
