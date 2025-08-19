@@ -57,12 +57,16 @@ function getCombinationKey(first, second) {
 // Check if a result has ever been created before (first discovery check)
 function isFirstDiscovery(result, existingCombinations) {
     // Check if this result has ever appeared in any combination
-    for (const combination of Object.values(existingCombinations)) {
+    for (const [key, combination] of Object.entries(existingCombinations)) {
         if (combination.result.toLowerCase() === result.toLowerCase()) {
-            return false; // Result already exists
+            // If we found this result in existing combinations, it's not a first discovery
+            // regardless of whether it's a different combination method
+            return false;
         }
     }
-    return true; // This is a first discovery!
+    
+    // If we get here, this result has never been created before through any combination
+    return true; // This is a first discovery of this result!
 }
 
 // SSE endpoint for real-time updates
