@@ -146,8 +146,8 @@ app.post('/api/combination', async (req, res) => {
             });
         }
         
-        // Check if this result is a first discovery
-        const isFirstTime = isFirstDiscovery(result, combinations, key);
+        // Check if this result is a first discovery (BEFORE adding to combinations)
+        const isFirstTime = isFirstDiscovery(result, combinations);
         
         // Save to JSON file with metadata about first discovery
         const newCombination = { 
