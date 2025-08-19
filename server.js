@@ -56,35 +56,16 @@ function getCombinationKey(first, second) {
 
 // Check if a result has ever been created before (first discovery check)
 function isFirstDiscovery(result, existingCombinations, currentCombinationKey = null) {
-    // Check if this result has ever appeared in any combination
-    const matchingCombinations = [];
-    
+    // Check if this result has ever appeared in any existing combination
     for (const [key, combination] of Object.entries(existingCombinations)) {
+        // If we find the result in existing combinations, it's not a first discovery
         if (combination.result.toLowerCase() === result.toLowerCase()) {
-            matchingCombinations.push(key);
+            return false; // Result already exists
         }
     }
     
-    // If no matches found, this is definitely a first discovery
-    if (matchingCombinations.length === 0) {
-        return true;
-    }
-    
-    // If currentCombinationKey is provided and it's the only match, 
-    // it means we're checking an existing combination (not a new one)
-    if (currentCombinationKey && matchingCombinations.length === 1 && matchingCombinations[0] === currentCombinationKey) {
-        return true; // This would be first discovery if it didn't already exist
-    }
-    
-    // If there are other combinations that create the same result,
-    // this is not a first discovery
-    if (currentCombinationKey) {
-        // Remove the current combination key from matches to see if others exist
-        const otherMatches = matchingCombinations.filter(key => key !== currentCombinationKey);
-        return otherMatches.length === 0;
-    }
-    
-    return false; // Result already exists through other combinations
+    // If we get here, no existing combination creates this result
+    return true; // This is a first discovery!
 }
 
 // SSE endpoint for real-time updates
