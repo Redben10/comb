@@ -18,24 +18,7 @@ const sseClients = new Set();
 async function loadCombinations() {
     try {
         const data = await fs.readFile(COMBINATIONS_FILE, 'utf8');
-        const combinations = JSON.parse(data);
-        
-        // Migration: Add sessionId to existing combinations that don't have it
-        let hasChanges = false;
-        for (const [key, combo] of Object.entries(combinations)) {
-            if (!combo.sessionId) {
-                combo.sessionId = 'default';
-                hasChanges = true;
-            }
-        }
-        
-        // Save back if we made changes
-        if (hasChanges) {
-            console.log('🔄 Migrating existing combinations to include sessionId');
-            await fs.writeFile(COMBINATIONS_FILE, JSON.stringify(combinations, null, 2));
-        }
-        
-        return combinations;
+        return JSON.parse(data);
     } catch (error) {
         console.error('Error loading combinations:', error);
         return {};
@@ -72,34 +55,14 @@ function getCombinationKey(first, second) {
 }
 
 // Check if a result has ever been created before (first discovery check)
-// This checks globally across all sessions - once discovered anywhere, never a first discovery again
-function isFirstDiscovery(result, existingCombinations, sessionId = null) {
-    // Always check globally for first discoveries - once something is discovered by anyone, 
-    // it's never a "first discovery" again, regardless of session
+function isFirstDiscovery(result, existingCombinations) {
+    // Check if this result has ever appeared in any combination
     for (const combination of Object.values(existingCombinations)) {
         if (combination.result.toLowerCase() === result.toLowerCase()) {
-            return false; // Result already exists globally, not a first discovery
+            return false; // Result already exists
         }
     }
-    return true; // This is a true first discovery globally!
-}
-
-// Check if a combination already exists in a specific session
-function combinationExistsInSession(first, second, sessionId, existingCombinations) {
-    const key = getCombinationKey(first, second);
-    const sessionKey = sessionId === 'default' ? key : `${sessionId}:${key}`;
-    
-    // Check session-specific key first
-    if (existingCombinations[sessionKey]) {
-        return existingCombinations[sessionKey];
-    }
-    
-    // Fall back to default key if session-specific not found
-    if (existingCombinations[key] && existingCombinations[key].sessionId === sessionId) {
-        return existingCombinations[key];
-    }
-    
-    return null;
+    return true; // This is a first discovery!
 }
 
 // SSE endpoint for real-time updates
@@ -136,24 +99,19 @@ app.get('/events', (req, res) => {
 app.get('/api/combination/:first/:second', async (req, res) => {
     try {
         const { first, second } = req.params;
-        const sessionId = req.query.sessionId || req.headers['x-session-id'] || 'default';
+        const key = getCombinationKey(first, second);
         const combinations = await loadCombinations();
         
-        // Look for combination in this specific session
-        const foundCombination = combinationExistsInSession(first, second, sessionId, combinations);
-        
-        if (foundCombination) {
-            const key = getCombinationKey(first, second);
-            console.log(`🔍 Found combination in session ${sessionId}: ${key} = ${foundCombination.result}`);
+        if (combinations[key]) {
+            console.log(`🔍 Found combination: ${key} = ${combinations[key].result}`);
+            // Always return isNew: false for existing combinations
             res.json({
-                result: foundCombination.result,
-                emoji: foundCombination.emoji,
-                isNew: false, // Never show as new when retrieving existing combinations
-                sessionId: foundCombination.sessionId || sessionId
+                result: combinations[key].result,
+                emoji: combinations[key].emoji,
+                isNew: false // Never show as new when retrieving existing combinations
             });
         } else {
-            const key = getCombinationKey(first, second);
-            console.log(`❓ Combination not found: ${key} for session ${sessionId}`);
+            console.log(`❓ Combination not found: ${key}`);
             res.status(404).json({ error: 'Combination not found' });
         }
     } catch (error) {
@@ -166,49 +124,41 @@ app.get('/api/combination/:first/:second', async (req, res) => {
 app.post('/api/combination', async (req, res) => {
     try {
         const { first, second, result, emoji, isNew } = req.body;
-        const sessionId = req.body.sessionId || req.query.sessionId || req.headers['x-session-id'] || 'default';
         
         if (!first || !second || !result || !emoji) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
         
+        const key = getCombinationKey(first, second);
         const combinations = await loadCombinations();
         
-        // Check if this combination already exists in this session
-        const existingCombination = combinationExistsInSession(first, second, sessionId, combinations);
-        
-        if (existingCombination) {
-            const key = getCombinationKey(first, second);
-            console.log(`⚠️ Combination already exists for session ${sessionId}: ${key}`);
+        // Don't overwrite existing combinations
+        if (combinations[key]) {
+            console.log(`⚠️ Combination already exists: ${key}`);
+            // Always return isNew: false for existing combinations
             return res.json({
-                result: existingCombination.result,
-                emoji: existingCombination.emoji,
-                isNew: false,
-                sessionId: existingCombination.sessionId || sessionId
+                result: combinations[key].result,
+                emoji: combinations[key].emoji,
+                isNew: false
             });
         }
         
-        // Check if this result is a GLOBAL first discovery (not session-specific)
+        // Check if this result is a first discovery
         const isFirstTime = isFirstDiscovery(result, combinations);
         
-        // Save to JSON file with metadata about first discovery and session
+        // Save to JSON file with metadata about first discovery
         const newCombination = { 
             result, 
             emoji, 
-            sessionId: sessionId,
-            wasFirstDiscovery: isFirstTime, // Track if it was ever a GLOBAL first discovery
+            wasFirstDiscovery: isFirstTime, // Track if it was ever a first discovery
             discoveredAt: new Date().toISOString() // When it was first discovered
         };
-        
-        // Use a composite key that includes sessionId for storage
-        const key = getCombinationKey(first, second);
-        const storageKey = sessionId === 'default' ? key : `${sessionId}:${key}`;
-        combinations[storageKey] = newCombination;
+        combinations[key] = newCombination;
         
         await saveCombinations(combinations);
         
         if (isFirstTime) {
-            console.log(`🌟 GLOBAL FIRST DISCOVERY (Session: ${sessionId}): ${key} = ${result} ${emoji}`);
+            console.log(`🌟 FIRST DISCOVERY: ${key} = ${result} ${emoji}`);
             
             // Send special notification for first discoveries
             const firstDiscoveryMessage = JSON.stringify({
@@ -216,7 +166,6 @@ app.post('/api/combination', async (req, res) => {
                 combination: key,
                 result,
                 emoji,
-                sessionId,
                 timestamp: new Date().toISOString()
             });
             
@@ -224,15 +173,14 @@ app.post('/api/combination', async (req, res) => {
                 client.write(`data: ${firstDiscoveryMessage}\n\n`);
             });
         } else {
-            console.log(`✨ New combination added (Session: ${sessionId}): ${key} = ${result} ${emoji} [Already discovered globally]`);
+            console.log(`✨ New combination added: ${key} = ${result} ${emoji}`);
         }
         
         // Return the combination with isNew set correctly for THIS request
         res.json({
             result,
             emoji,
-            isNew: isFirstTime, // Only true if this is actually a GLOBAL first discovery
-            sessionId: sessionId
+            isNew: isFirstTime // Only true if this is actually a first discovery right now
         });
         
     } catch (error) {
@@ -256,19 +204,14 @@ app.get('/api/combinations', async (req, res) => {
 app.get('/api/check-first-discovery/:result', async (req, res) => {
     try {
         const { result } = req.params;
-        const sessionId = req.query.sessionId || req.headers['x-session-id'] || 'default';
         const combinations = await loadCombinations();
         
-        // Always check globally - first discoveries are global, not per-session
         const isFirst = isFirstDiscovery(result, combinations);
         
         res.json({
             result,
-            sessionId,
             isFirstDiscovery: isFirst,
-            message: isFirst ? 
-                `This would be a GLOBAL first discovery!` : 
-                `This result already exists globally (discovered by someone before)`
+            message: isFirst ? 'This would be a first discovery!' : 'This result already exists'
         });
     } catch (error) {
         console.error('Error checking first discovery:', error);
@@ -279,32 +222,21 @@ app.get('/api/check-first-discovery/:result', async (req, res) => {
 // Get all first discoveries (items marked as wasFirstDiscovery: true)
 app.get('/api/first-discoveries', async (req, res) => {
     try {
-        const sessionId = req.query.sessionId || req.headers['x-session-id']; // No default - show all if not specified
         const combinations = await loadCombinations();
         const firstDiscoveries = {};
         
         for (const [key, combo] of Object.entries(combinations)) {
             if (combo.wasFirstDiscovery === true) {
-                // If sessionId is specified, only include discoveries from that session
-                if (!sessionId || combo.sessionId === sessionId) {
-                    // Clean up the key for display (remove session prefix if present)
-                    const displayKey = key.includes(':') ? key.split(':')[1] : key;
-                    firstDiscoveries[displayKey] = {
-                        result: combo.result,
-                        emoji: combo.emoji,
-                        sessionId: combo.sessionId || 'default',
-                        discoveredAt: combo.discoveredAt,
-                        wasFirstDiscovery: true
-                    };
-                }
+                firstDiscoveries[key] = {
+                    result: combo.result,
+                    emoji: combo.emoji,
+                    discoveredAt: combo.discoveredAt,
+                    wasFirstDiscovery: true
+                };
             }
         }
         
-        res.json({
-            sessionId: sessionId || 'all',
-            firstDiscoveries,
-            count: Object.keys(firstDiscoveries).length
-        });
+        res.json(firstDiscoveries);
     } catch (error) {
         console.error('Error fetching first discoveries:', error);
         res.status(500).json({ error: 'Internal server error' });
